@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Agnolar – Seren Chronicles</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0b0b0b">
+
+<link rel="icon" type="image/png" href="assets/icon-32.png">
+<link rel="apple-touch-icon" sizes="180x180" href="assets/icon-180.png">
+
+<style>
+  :root{
+    --bg:#0b0b0b;
+    --card:#1a1a1a;
+    --muted:#bbb;
+    --accent:#ffd000;
+    --danger:#ff7777;
+  }
+  html,body{height:100%}
+  body {
+    background:var(--bg);
+    color:#fff;
+    font-family:Arial,system-ui,-apple-system;
+    text-align:center;
+    margin:0;
+    padding:12px;
+    -webkit-font-smoothing:antialiased;
+  }
+  .card {
+    background:var(--card);
+    border-radius:14px;
+    padding:16px;
+    margin:12px auto;
+    max-width:420px;
+    box-shadow:0 4px 8px rgba(0,0,0,.4);
+  }
+  button {
+    width:100%;
+    padding:12px;
+    margin:6px 0;
+    font-size:15px;
+    border:none;
+    border-radius:10px;
+    background:var(--accent);
+    font-weight:700;
+    cursor:pointer;
+  }
+  button:active{ transform:scale(.98) }
+  button[disabled]{ opacity:.6; cursor:not-allowed }
+  .bar { background:#333; border-radius:10px; overflow:hidden; margin-top:6px; }
+  .fill { height:16px; background:var(--accent); width:0%; transition:width .15s linear; }
+  .small { font-size:13px; color:var(--muted); margin:6px 0 0; }
+  .hero { font-size:20px; margin:6px 0; }
+  .enemy { color:var(--danger); }
+  .row { display:flex; gap:8px; }
+  .row > button{ flex:1 }
+  .visually-hidden{ position:absolute; left:-9999px; top:auto; width:1px; height:1px; overflow:hidden; }
+</style>
+</head>
+<body>
+<h1>🟡 Agnolar – Seren Chronicles</h1>
+
+<div class="card" aria-labelledby="hero-heading">
+  <h3 id="hero-heading">Hero</h3>
+  <p class="hero" id="heroText">🟡 Agnolar</p>
+  <p class="small" id="heroDesc">Keeper of balance</p>
+
+  <div class="row" role="group" aria-label="Choose hero">
+    <button type="button" onclick="setHero('Agnolar')">🟡 Agnolar</button>
+    <button type="button" onclick="setHero('Blue')">🔵 Blue</button>
+  </div>
+  <div class="row" role="group" aria-label="Choose hero">
+    <button type="button" onclick="setHero('Tuff')">🔴 Tuff</button>
+    <button type="button" onclick="setHero('Isleo')">⚪ Isleo</button>
+    <button type="button" onclick="setHero('Blaser')">🟣 Blaser</button>
+  </div>
+</div>
+
+<div class="card" aria-labelledby="pet-heading">
+  <h3 id="pet-heading">Pet</h3>
+  <p id="petText">🐺 Stone Lynx</p>
+  <div class="row" role="group" aria-label="Choose pet">
+    <button type="button" onclick="setPet('Lynx')">🐺 Stone Lynx</button>
+    <button type="button" onclick="setPet('Hawk')">🦅 Sky Hawk</button>
+  </div>
+</div>
+
+<div class="card" aria-labelledby="story-heading">
+  <h3 id="story-heading">Story Choice</h3>
+  <p id="story" class="small">A village asks for help.</p>
+  <div class="row">
+    <button type="button" onclick="storyChoice(1)">Help carefully</button>
+    <button type="button" onclick="storyChoice(2)">Act fast</button>
+  </div>
+</div>
+
+<div class="card" aria-labelledby="mission-heading">
+  <h3 id="mission-heading">Mission</h3>
+  <div class="bar" aria-hidden="true"><div id="progress" class="fill" style="width:0%"></div></div>
+  <button id="missionBtn" type="button" onclick="startMission()">Start Mission</button>
+</div>
+
+<div class="card enemy" aria-labelledby="boss-heading">
+  <h3 id="boss-heading">Boss: <span id="bossName">Blaser</span></h3>
+  <p id="bossHP">HP: 120</p>
+  <button type="button" onclick="attackBoss()">Attack Boss</button>
+</div>
+
+<div class="card" aria-labelledby="stats-heading">
+  <p id="stats">Coins: 100 | XP: 0 | Level: 1</p>
+  <p class="small">Auto-saves</p>
+</div>
+
+<script>
+/* Load state safely from localStorage */
+function loadNumber(key, fallback){
+  const v = localStorage.getItem(key);
+  return v === null ? fallback : Number(v);
+}
+let hero = localStorage.getItem('hero') || "Agnolar";
+let pet = localStorage.getItem('pet') || "Lynx";
+let coins = loadNumber('coins', 100);
+let xp = loadNumber('xp', 0);
+let level = loadNumber('level', 1);
+let bossIndex = loadNumber('bossIndex', 0);
+
+const heroes = {
+  Agnolar:{desc:"Keeper of balance"},
+  Blue:{desc:"Smart strategist"},
+  Tuff:{desc:"Strong fighter"},
+  Isleo:{desc:"Light protector"},
+  Blaser:{desc:"Wild chaos power"}
+};
+
+const bosses = [
+  {name:"Blaser", hp:120},
+  {name:"Shadow Core", hp:170},
+  {name:"Void Beast", hp:240}
+];
+
+/* ensure bossIndex in range */
+if (bossIndex < 0 || bossIndex >= bosses.length) bossIndex = 0;
+let bossHP = loadNumber('bossHP', bosses[bossIndex].hp);
+
+/* Save function using setItem to ensure string storage */
+function save(){
+  try{
+    localStorage.setItem('hero', hero);
+    localStorage.setItem('pet', pet);
+    localStorage.setItem('coins', String(coins));
+    localStorage.setItem('xp', String(xp));
+    localStorage.setItem('level', String(level));
+    localStorage.setItem('bossIndex', String(bossIndex));
+    localStorage.setItem('bossHP', String(bossHP));
+  }catch(e){
+    // ignore quota errors for now
+    console.warn('Save failed', e);
+  }
+}
+
+function setHero(h){ hero = h; update(); save(); }
+function setPet(p){ pet = p; update(); save(); }
+
+/* storyChoice: reward tradeoff */
+function storyChoice(c){
+  if(c===1){ coins += 10; xp += 5; }
+  else { coins += 5; bossHP += 10; }
+  levelUp();
+  update(); save();
+}
+
+/* mission: incremental progress with button disabled during mission */
+function startMission(){
+  const btn = document.getElementById('missionBtn');
+  if(btn.disabled) return;
+  btn.disabled = true;
+  const bar = document.getElementById('progress');
+  bar.style.width = '0%';
+  let p = 0;
+  const duration = 2000; // ms
+  const steps = 20;
+  const stepMs = Math.max(20, Math.floor(duration/steps));
+  const reward = 20 + (pet === "Hawk" ? 10 : 0);
+  const timer = setInterval(()=>{
+    p++;
+    bar.style.width = Math.min(100, (p/steps)*100) + '%';
+    if(p >= steps){
+      clearInterval(timer);
+      coins += reward;
+      xp += 10;
+      levelUp();
+      btn.disabled = false;
+      update(); save();
+    }
+  }, stepMs);
+}
+
+/* attack boss: damage depends on hero/pet/level */
+function attackBoss(){
+  let dmg = 10 + level*2;
+  if(hero === "Tuff") dmg += 6;
+  if(hero === "Blaser") dmg += 10;
+  if(pet === "Lynx") dmg += 4;
+
+  bossHP = Math.max(0, bossHP - dmg);
+  xp += 15;
+
+  if(bossHP === 0){
+    coins += 50; // reward for beating a boss
+    // advance bossIndex and wrap
+    bossIndex++;
+    if(bossIndex >= bosses.length){
+      alert("YOU BEAT THE GAME!");
+      bossIndex = 0;
+    }
+    bossHP = bosses[bossIndex].hp;
+  }
+  levelUp();
+  update(); save();
+}
+
+/* levelUp preserves overflow XP so extra xp counts toward next level */
+function levelUp(){
+  let threshold = level * 40;
+  while(xp >= threshold){
+    xp -= threshold;
+    level++;
+    threshold = level * 40;
+  }
+}
+
+/* update UI text */
+function update(){
+  document.getElementById("heroText").innerText = hero;
+  document.getElementById("heroDesc").innerText = (heroes[hero] && heroes[hero].desc) ? heroes[hero].desc : '';
+  document.getElementById("petText").innerText = pet === "Lynx" ? "🐺 Stone Lynx" : "🦅 Sky Hawk";
+  document.getElementById("bossName").innerText = bosses[bossIndex].name;
+  document.getElementById("bossHP").innerText = "HP: " + bossHP;
+  document.getElementById("stats").innerText = `Coins: ${coins} | XP: ${xp} | Level: ${level}`;
+}
+
+/* initial render */
+update();
+
+/* auto-save periodically as a backup */
+setInterval(save, 5000);
+</script>
+</body>
+</html>
